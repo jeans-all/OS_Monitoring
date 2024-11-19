@@ -5,11 +5,6 @@ from pathlib import Path
 import logging
 import sys
 
-
-
-project_root = Path(__file__).parent.parent.parent
-sys.path.append(str(project_root))
-
 from config.settings import LOG_DIR, LOG_FORMAT
 
 
