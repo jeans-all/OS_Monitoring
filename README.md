@@ -94,15 +94,8 @@ Open your web browser and navigate to `http://localhost:8501` to view the dashbo
 
 python3 -m unittest discover tests
 
-## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## Play Screen
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Thanks to the developers of psutil, Streamlit, and Plotly for their amazing libraries
-- Inspired by various system monitoring tools and dashboards
+<img src="./images/cpu_vs_memory.png" width="80%" height="80%">
+<img src="./images/network_usage.png" width="80%" height="80%">
