@@ -4,7 +4,7 @@ This project provides a real-time system monitoring dashboard that visualizes va
 
 ## Features
 
-Real-time monitoring consists of :
+Real-time monitoring consists of
  * Virtual memory composition over time (serial graph) 
  * Virtual memory usage vs Swap memory usage over time (serial graph)
  * CPU usage percentage vs. Memory usage percentage (serial graph)
