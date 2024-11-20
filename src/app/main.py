@@ -25,19 +25,22 @@ def main():
     data = collector.collect_system_data()
 
     if data:
-        storage.save_to_db(data)
+        storage.save_to_db(data)    
     
     # load stored data
     df = storage.load_data()
 
-    if not df.empty:
-        # cpu-memory chart
-        cpu_memory_chart = chart_gen.create_cpu_memory_chart(df)
-        st.plotly_chart(cpu_memory_chart)
 
-        # network chart
-        network_chart = chart_gen.create_network_chart(df)
-        st.plotly_chart(network_chart)
+
+
+    # new feature
+    data_mem = collector.collect_system_memory()
+    if data_mem:
+        storage.save_to_db_mem(data_mem)
+        
+    df_mem = storage.load_data_mem()
+
+    if not df.empty:
 
         # current system status
         col1, col2, col3 = st.columns(3)
@@ -48,6 +51,28 @@ def main():
             st.metric("Memory Usage", f"{data['memory_percent']}%")
         with col3:
             st.metric("Disk Usage", f"{data['disk_usage']}%")
+
+
+    if not df_mem.empty:
+        memory_composition_chart = chart_gen.create_memory_composition_chart(df_mem, unit = 'GB')
+        memory_swap_comparison_chart = chart_gen.create_memory_swap_comparison_chart(df_mem, unit = 'GB')
+
+        st.plotly_chart(memory_composition_chart)
+        st.plotly_chart(memory_swap_comparison_chart)
+
+
+
+        # cpu-memory chart
+        cpu_memory_chart = chart_gen.create_cpu_memory_chart(df)
+        st.plotly_chart(cpu_memory_chart)
+
+        # network chart
+        network_chart = chart_gen.create_network_chart(df)
+        st.plotly_chart(network_chart)
+
+
+
+    
 
     time.sleep(COLLECTION_INTERVAL)
     st.rerun()
