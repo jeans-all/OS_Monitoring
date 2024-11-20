@@ -5,11 +5,10 @@ This project provides a real-time system monitoring dashboard that visualizes va
 ## Features
 
 - Real-time monitoring of:
+ * Virtual memory composition over time (serial graph) 
+ * Virtual memory usage vs Swap memory usage over time (serial graph)
  * CPU usage percentage vs. Memory usage percentage (serial graph)
  * Network usage over time (incoming and outgoing traffic)
- * CPU usage breakdown
- * Memory usage statistics
- * Disk usage information
 
 ## Technologies Used
 
@@ -97,5 +96,8 @@ python3 -m unittest discover tests
 
 ## Play Screen
 
+<img src="./images/memory_composition.png" width="80%" height="80%">
+<img src="./images/memory_vs_swap.png" width="80%" height="80%">
 <img src="./images/cpu_vs_memory.png" width="80%" height="80%">
 <img src="./images/network_usage.png" width="80%" height="80%">
+
