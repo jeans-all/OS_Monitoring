@@ -67,4 +67,61 @@ class SystemDataCollector:
         except Exception as e:
             logger.error(f'Error collecting system memory: {e}')
             return None
-    
+
+
+    @staticmethod
+    def collect_system_io(duration=1):
+        # I/O Bottlenecks & Disk Saturation
+        try:
+
+            # Get initial counters
+            io_start = psutil.disk_io_counters()
+            time.sleep(duration)
+
+            # Get counters after 1 second
+            io_end = psutil.disk_io_counters()
+            
+            # Calculate per-second metrics
+            read_io_bytes = io_end.read_bytes - io_start.read_bytes
+            write_io_bytes = io_end.write_bytes - io_start.write_bytes
+            
+            # Check busy time percentage (busy time percent means busy time / actual time elapsed. In the code below 1000 (= 1 sec) is an elapsed time)
+            busy_time = io_end.busy_time - io_start.busy_time
+            busy_percentage = (busy_time / (duration*1000)) * 100  # Convert milliseconds to percentage
+            
+            return {
+                "read_io_bytes_per_sec": read_speed,
+                "write_io_bytes_per_sec": write_speed,
+                "busy_percentage": busy_percentage
+            }
+
+        except Exception as e:
+            logger.error(f'Error collecting IO metric: {e}')
+            return None
+
+
+    # High Wait Time
+    @staticmethod
+    def check_io_wait_time():
+        cpu_times = psutil.cpu_times()
+        iowait = cpu_times.iowait
+        
+        # Get per-process I/O wait
+        processes_io = []
+        for proc in psutil.process_iter(['name', 'io_counters']):
+            try:
+                proc_io = proc.io_counters()
+                processes_io.append({
+                    'name': proc.name(),
+                    'read_time': proc_io.read_time,
+                    'write_time': proc_io.write_time
+                })
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+        
+        return {
+            'system_iowait': iowait,
+            'process_io_times': sorted(processes_io, 
+                                    key=lambda x: x['read_time'] + x['write_time'], 
+                                    reverse=True)[:5]  # Top 5 processes
+    }
