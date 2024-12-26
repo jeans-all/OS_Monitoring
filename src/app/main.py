@@ -30,15 +30,26 @@ def main():
     # load stored data
     df = storage.load_data()
 
-
-
-
     # new feature
     data_mem = collector.collect_system_memory()
     if data_mem:
         storage.save_to_db_mem(data_mem)
         
     df_mem = storage.load_data_mem()
+
+    if sys.platform.startswith('linux') or sys.platform == 'win32':
+        data_process_io_wait = collector.collect_process_io_wait_time()
+    
+        if data_process_io_wait:
+            storage.save_to_db_process_io_wait(data_process_io_wait)
+   
+   
+    data_system_io_wait_time = collector.collect_system_io_wait_time()
+    if data_system_io_wait_time:
+        storage.save_to_db_system_io_wait(data_system_io_wait_time)
+    
+    (df_process_io_wait, df_system_io_wait) = storage.load_data_io_wait()
+        
 
     if not df.empty:
 
@@ -61,7 +72,6 @@ def main():
         st.plotly_chart(memory_swap_comparison_chart)
 
 
-
         # cpu-memory chart
         cpu_memory_chart = chart_gen.create_cpu_memory_chart(df)
         st.plotly_chart(cpu_memory_chart)
@@ -70,9 +80,25 @@ def main():
         network_chart = chart_gen.create_network_chart(df)
         st.plotly_chart(network_chart)
 
+    # process hierarchy 
+    processes = collector.get_process_data()
+    if len(processes) > 0:
+
+        root = chart_gen.create_process_tree(processes)
+
+        fig = chart_gen.create_process_chart(root)
+        st.plotly_chart(fig, use_container_width=True)
 
 
-    
+    if not df_process_io_wait.empty:
+        print("draw a chart here")   
+    else:
+        print("psutil doesn't support monitoring of per-process IO wait information")
+
+    if not df_system_io_wait.empty:
+        fig = chart_gen.create_system_io_wait_char(df_system_io_wait)
+        st.plotly_chart(fig, use_container_width=True)
+
 
     time.sleep(COLLECTION_INTERVAL)
     st.rerun()
