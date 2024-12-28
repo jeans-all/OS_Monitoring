@@ -5,7 +5,17 @@ from anytree import Node, PreOrderIter
 from anytree.exporter import DictExporter
 import streamlit as st
 
+def convert_bytes(x, to_unit: str):
+    units = {
+        'B': 1,
+        'KB': 1024,
+        'MB': 1024**2,
+        'GB': 1024**3
+    }
+    return x / units[to_unit]
+
 class ChartGenerator:
+    
     @staticmethod
     def create_cpu_memory_chart(df):
         fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -39,22 +49,28 @@ class ChartGenerator:
 
     @staticmethod
     def create_network_chart(df):
-        return px.line(df, x='timestamp', y=['network_bytes_sent', 'network_bytes_recv'], title='Network Usage Over Time')
+        fig = make_subplots()
+        fig.add_trace(go.Scatter(
+            x = df['timestamp'], 
+            y = df['network_bytes_sent'],
+            name = 'Network Bytes Sent',
+            mode = 'lines+markers'
+        ))
+        
+        fig.add_trace(go.Scatter(
+            x = df['timestamp'], 
+            y = df['network_bytes_recv'],
+            name = 'Network Bytes Received',
+            mode = 'lines+markers'
+        ))
 
+        fig.update_layout(title='Network Usage Over Time', yaxis_type='log')
+        
+        return fig
 
     @staticmethod
     def create_memory_composition_chart(df, unit='MB'):
-        # conver unit 
-        def convert_bytes(x, to_unit):
-            units = {
-                'B': 1,
-                'KB': 1024,
-                'MB': 1024**2,
-                'GB': 1024**3
-            }
-            return x / units[to_unit]
-
-        # copy dataframe and convert unit of data
+ 
         df_converted = df.copy()
         memory_columns = ['memory_used', 'memory_cached', 'memory_buffers', 'memory_available']
         
@@ -83,14 +99,13 @@ class ChartGenerator:
     def create_system_io_wait_char(df):
         fig = go.Figure()
 
-        # 영역 그래프로 읽기/쓰기 IO 표현
         fig.add_trace(go.Scatter(
             x=df['timestamp'], 
             y=df['read_io_bytes_per_sec'],
             name='Read IO',
             mode='lines',
             fill='tozeroy', 
-            line=dict(color='blue')
+            line=dict(color='blue') 
         ))
         fig.add_trace(go.Scatter(
             x=df['timestamp'], 
@@ -108,19 +123,19 @@ class ChartGenerator:
             name='Busy %',
             mode='lines',
             line=dict(color='green', dash='dash'),
-            yaxis='y2'  # second Y-axis
+            yaxis='y2',  # second Y-axis
         ))
 
         # setting up layout
         fig.update_layout(
             title='System IO Performance',
             xaxis_title='Time',
-            yaxis=dict(title='IO Bytes/sec'),
+            yaxis=dict(title='IO Bytes/sec', showgrid=False),
             yaxis2=dict(
                 title='Busy %',
                 overlaying='y',
                 side='right',
-                range=[0, 100]
+                range=[0, 5]
             ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
@@ -148,8 +163,6 @@ class ChartGenerator:
 
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         
-        # 메모리 사용률 계산 (퍼센트)
-
         df_converted['memory_usage_percent'] = (df_converted['memory_used'] / df_converted['memory_total']) * 100
         
         # primary y-axis: memory usage
@@ -240,8 +253,3 @@ class ChartGenerator:
         fig.update_layout(title_text="Process Hierarchy", font_size=10)
         return fig
     
-
-# 사용 예시:
-# 단위를 지정하여 차트 생성
-# chart1 = create_memory_composition_chart(df, unit='GB')
-# chart2 = create_memory_swap_comparison_chart(df, unit='MB')

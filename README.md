@@ -9,7 +9,9 @@ Real-time monitoring consists of
  * Virtual memory usage vs Swap memory usage over time (serial graph)
  * CPU usage percentage vs. Memory usage percentage (serial graph)
  * Network usage over time (incoming and outgoing traffic)
-
+ * Process hierarchy (parent-child relationship)
+ * System IO wait (read/write IO wait time)
+ * 
 ## Technologies Used
 
 - Python
@@ -100,4 +102,6 @@ python3 -m unittest discover tests
 <img src="./images/memory_vs_swap.png" width="80%" height="80%">
 <img src="./images/cpu_vs_memory.png" width="80%" height="80%">
 <img src="./images/network_usage.png" width="80%" height="80%">
+<img src="./images/process_hierarchy.png" width="80%" height="80%">
+<img src="./images/system_io_performance.png" width="80%" height="80%">
 

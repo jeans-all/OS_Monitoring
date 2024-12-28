@@ -4,7 +4,6 @@ from pathlib import Path
 import sys
 
 # Add root directory of project to PYTHONPATH
-
 project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 
@@ -71,14 +70,15 @@ def main():
         st.plotly_chart(memory_composition_chart)
         st.plotly_chart(memory_swap_comparison_chart)
 
-
         # cpu-memory chart
         cpu_memory_chart = chart_gen.create_cpu_memory_chart(df)
         st.plotly_chart(cpu_memory_chart)
 
         # network chart
         network_chart = chart_gen.create_network_chart(df)
-        st.plotly_chart(network_chart)
+        st.plotly_chart(network_chart, use_container_width=True)
+
+
 
     # process hierarchy 
     processes = collector.get_process_data()
