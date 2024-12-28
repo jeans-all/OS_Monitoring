@@ -19,8 +19,8 @@ class DataStorage:
     def __init__(self):
         self.db_path = DB_PATH
         self._create_table()
-
         self._create_table_mem()
+        self._create_table_system_io_wait()
     
     def _create_table(self):
         query = '''
@@ -67,7 +67,6 @@ class DataStorage:
         INSERT INTO system_metrics (timestamp, cpu_percent, memory_percent, disk_usage, network_bytes_sent, network_bytes_recv)
         VALUES (:timestamp, :cpu_percent, :memory_percent, :disk_usage, :network_bytes_sent, :network_bytes_recv)
         '''
-        # (:timestamp, :cpu_percent, :memory_percent, :disk_usage, :network_bytes_sent, :network_bytes_recv)
         try:
 
             logger.debug(f"Attempting to save data: {data}")
@@ -153,11 +152,92 @@ class DataStorage:
         except Exception as e:
             logger.error(f"Error saving memory metrics: {e}")
             logger.error(f'Query was: {query}')
-            print(data)
-            exit()
 
-    
-    
+   
+    def save_to_db_system_io_wait(self, data):
+        if data is None: return
+
+        querySystem = '''
+            INSERT INTO system_io_wait (
+                timestamp, 
+                read_io_bytes_per_sec,
+                write_io_bytes_per_sec,
+                busy_percentage
+            ) 
+            VALUES (
+                :timestamp, 
+                :read_io_bytes_per_sec,
+                :write_io_bytes_per_sec,
+                :busy_percentage            )
+        '''
+        
+        params1 = {
+            'timestamp': data['timestamp'],
+            'read_io_bytes_per_sec': data['read_io_bytes_per_sec'],
+            'write_io_bytes_per_sec': data['write_io_bytes_per_sec'],
+            'busy_percentage': data['busy_percentage']
+        }
+        try: 
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute(querySystem, params1)
+            
+            logger.info("system-wide io wait metric saved successfully")
+
+        except Exception as e:
+            logger.error(f'Error saving system io wait metrics: {e}')
+            logger.error(f'Query was {querySystem}')
+
+    def _create_table_system_io_wait(self):
+
+        query = '''
+        CREATE TABLE IF NOT EXISTS system_io_wait (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, 
+            timestamp DATETIME NOT NULL,
+            read_io_bytes_per_sec REAL NOT NULL,
+            write_io_bytes_per_sec REAL NOT NULL,
+            busy_percentage REAL NOT NULL
+        )
+        '''
+
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(query)
+            conn.commit()
+
+
+    def save_to_db_process_io_wait(self, data):
+        queryProcess = '''
+            INSERT INTO process_io_wait (
+                timestamp, 
+                process_name, 
+                io_wait_time_per_process)
+            VALUES (
+                :timestamp, 
+                :process_name, 
+                :process_io_wait_time
+            )
+        '''
+        params2 = {
+            'timestamp': data['timestamp'],
+            'process_name': None,
+            'process_io_wait_time': None
+        }
+
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute(queryProcess, params2)
+                
+                for p in data['process_io_times']:
+                    params2['process_name'] = p['name']
+                    params2['process_io_wait_time'] = p['read_time'] + p['write_time']
+
+                    conn.execute(queryProcess, params2)
+
+            logger.info("process io wait metric saved successfully")
+        
+        except Exception as e:
+            logger.error(f'Error saving io wait metrics: {e}')
+            logger.error(f'Query was {queryProcess}')
+
     def load_data(self, limit=100):
         query = f"SELECT * FROM system_metrics ORDER BY timestamp DESC LIMIT {limit}"
         try:
@@ -175,3 +255,30 @@ class DataStorage:
         except Exception as e:
             logger.error(f"Error loading memory metrics: {e}")
             return pd.DataFrame()
+    
+
+    def load_data_io_wait(self, limit=100):
+        query1 = f"SELECT * FROM process_io_wait ORDER BY timestamp DESC LIMIT {limit}"
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                df1 = pd.read_sql_query(query1, conn)
+        except Exception as e:
+            if 'no such table' in str(e): 
+                logger.info('Process io wait monitoring not available on Mac')
+            else:
+                logger.info(f"Error loading io process wait metric: {e}")
+            df1 = pd.DataFrame()
+        
+        query2 = f"SELECT * FROM system_io_wait ORDER BY timestamp DESC LIMIT {limit}"
+
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                df2 = pd.read_sql_query(query2, conn)
+        except Exception as e:
+            logger.error(f"Error loading system io wait metric: {e}")
+            df2 = pd.DataFrame()
+
+        return (df1, df2)
+
+    # since process graph is real-time, we don't need to store it into database
+    
